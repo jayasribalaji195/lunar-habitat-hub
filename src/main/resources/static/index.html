@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lunar Habitat Control</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="grid-wash"></div>
+
+<header class="mission-bar">
+  <div class="mission-id">
+    <span class="mission-mark">⟐</span>
+    <div>
+      <div class="mission-title">Lunar Habitat Environmental Control</div>
+      <div class="mission-sub">Resource Reclamation Infrastructure</div>
+    </div>
+  </div>
+  <div class="mission-status">
+    <div class="status-tally">
+      <span class="tally-dot ok"></span><span id="tallyNominal">0 nominal</span>
+      <span class="tally-dot alert"></span><span id="tallyAlert">0 alert</span>
+    </div>
+    <span class="clock" id="clock">--:--:--</span>
+    <span class="api-chip" id="apiChip">checking link…</span>
+  </div>
+</header>
+
+<nav class="tab-bar">
+  <button class="tab is-active" data-section="modules">Habitat Modules</button>
+  <button class="tab" data-section="telemetry">Telemetry</button>
+  <button class="tab" data-section="orders">Orders &amp; Invoices</button>
+  <button class="tab" data-section="master">Master Data</button>
+  <button class="tab" data-section="purchases">Procurement</button>
+  <button class="tab" data-section="budgets">Budgets</button>
+  <button class="tab" data-section="reports">Reports</button>
+</nav>
+
+<main class="content">
+
+  <!-- ============ HABITAT MODULES ============ -->
+  <section id="section-modules" class="panel-section is-active">
+    <div class="grid two">
+      <div class="card">
+        <h2>Register a habitat module</h2>
+        <form id="formCreateModule" class="form">
+          <label>Module name<input type="text" name="name" placeholder="Habitat Dome Alpha" required></label>
+          <label>Facility zone<input type="text" name="zone" placeholder="Shackleton Rim Zone 2" required></label>
+          <label>Dome area (m²)<input type="number" name="domeAreaM2" min="0" step="0.1" value="450" required></label>
+          <div class="form-row">
+            <label>Pressure min (kPa)<input type="number" name="pressureMinKPa" step="0.1" value="98.0" required></label>
+            <label>Pressure max (kPa)<input type="number" name="pressureMaxKPa" step="0.1" value="102.0" required></label>
+          </div>
+          <label>Water purity min (%)<input type="number" name="waterPurityMinPct" step="0.1" value="97.0" required></label>
+          <button type="submit" class="btn primary">Commission module</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Fleet status</h2>
+        <div id="moduleCards" class="module-cards">
+          <p class="empty">No modules commissioned yet.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TELEMETRY ============ -->
+  <section id="section-telemetry" class="panel-section">
+    <div class="grid two">
+      <div class="card">
+        <h2>Ingest telemetry reading</h2>
+        <form id="formTelemetry" class="form">
+          <label>Module
+            <select name="moduleId" id="telemetryModuleSelect" required></select>
+          </label>
+          <div class="form-row">
+            <label>Atmospheric pressure (kPa)<input type="number" name="atmosphericPressureKPa" step="0.01" required></label>
+            <label>Water purity (%)<input type="number" name="waterPurityPct" step="0.01" required></label>
+          </div>
+          <div class="form-row">
+            <label>Oxygen level (%)<input type="number" name="oxygenLevelPct" step="0.01" required></label>
+            <label>CO2 level (ppm)<input type="number" name="co2LevelPpm" step="1" required></label>
+          </div>
+          <div class="form-row">
+            <label>Oxygen consumed since last reading (m³)<input type="number" name="oxygenConsumedM3" step="0.01" value="0"></label>
+            <label>Water consumed since last reading (L)<input type="number" name="waterConsumedLiters" step="0.01" value="0"></label>
+          </div>
+          <button type="submit" class="btn primary">Submit reading</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Ingestion result</h2>
+        <div id="telemetryResult" class="result-box">
+          <p class="empty">No reading submitted yet.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Telemetry log</h2>
+        <select id="telemetryHistorySelect"><option value="">Select a module…</option></select>
+      </div>
+      <div class="table-wrap">
+        <table id="telemetryTable">
+          <thead>
+            <tr><th>Time</th><th>Pressure (kPa)</th><th>Purity (%)</th><th>O2 (%)</th><th>CO2 (ppm)</th><th>O2 used (m³)</th><th>H2O used (L)</th><th>Scrubber</th></tr>
+          </thead>
+          <tbody><tr><td colspan="8" class="empty">Select a module to view its log.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ORDERS & INVOICES ============ -->
+  <section id="section-orders" class="panel-section">
+    <div class="grid two">
+      <div class="card">
+        <h2>Issue life-support service order</h2>
+        <form id="formSalesOrder" class="form">
+          <label>Tenant
+            <select name="tenantId" id="orderTenantSelect" required></select>
+          </label>
+          <label>Module
+            <select name="moduleId" id="orderModuleSelect" required></select>
+          </label>
+          <label>Product / service
+            <select name="productId" id="orderProductSelect" required></select>
+          </label>
+          <div class="form-row">
+            <label>Period start<input type="date" name="periodStart" required></label>
+            <label>Period end<input type="date" name="periodEnd" required></label>
+          </div>
+          <button type="submit" class="btn primary">Issue order</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Sales orders</h2>
+        <div class="table-wrap">
+          <table id="ordersTable">
+            <thead><tr><th>Order #</th><th>Tenant</th><th>Module</th><th>Product</th><th>Period</th><th>Status</th><th></th></tr></thead>
+            <tbody><tr><td colspan="7" class="empty">No orders yet.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Invoices</h2>
+      <div class="table-wrap">
+        <table id="invoicesTable">
+          <thead><tr><th>Invoice #</th><th>Tenant</th><th>Quantity</th><th>Total</th><th>Status</th><th>Collect payment</th></tr></thead>
+          <tbody><tr><td colspan="6" class="empty">No invoices yet — convert a sales order first.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MASTER DATA ============ -->
+  <section id="section-master" class="panel-section">
+    <div class="grid two">
+      <div class="card">
+        <h2>Contacts</h2>
+        <form id="formContact" class="form">
+          <label>Name<input type="text" name="name" placeholder="Aurora Regolith Mining Co." required></label>
+          <div class="form-row">
+            <label>Type
+              <select name="type">
+                <option value="CUSTOMER">Customer (tenant)</option>
+                <option value="VENDOR">Vendor</option>
+              </select>
+            </label>
+            <label>Phone<input type="text" name="phone"></label>
+          </div>
+          <label>Email<input type="email" name="email"></label>
+          <button type="submit" class="btn">Add contact</button>
+        </form>
+        <div class="table-wrap">
+          <table id="contactsTable">
+            <thead><tr><th>ID</th><th>Name</th><th>Type</th><th>Phone</th></tr></thead>
+            <tbody><tr><td colspan="4" class="empty">No contacts yet.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Products</h2>
+        <form id="formProduct" class="form">
+          <label>Name<input type="text" name="name" placeholder="Reclaimed Oxygen" required></label>
+          <div class="form-row">
+            <label>Category
+              <select name="category">
+                <option value="GOODS">Goods</option>
+                <option value="SERVICE">Service</option>
+              </select>
+            </label>
+            <label>Unit
+              <select name="unit">
+                <option value="CUBIC_METER">Cubic meter</option>
+                <option value="LITER">Liter</option>
+                <option value="VISIT">Visit / period</option>
+              </select>
+            </label>
+          </div>
+          <label>Price per unit (₹)<input type="number" name="price" min="0" step="0.01" required></label>
+          <button type="submit" class="btn">Add product</button>
+        </form>
+        <div class="table-wrap">
+          <table id="productsTable">
+            <thead><tr><th>ID</th><th>Name</th><th>Category</th><th>Unit</th><th>Price</th></tr></thead>
+            <tbody><tr><td colspan="5" class="empty">No products yet.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Chart of accounts</h2>
+      <p class="hint">Asset, income, liability and expense accounts are created automatically the first time they're needed — this list fills in as invoices are paid and vendor bills are processed.</p>
+      <div class="table-wrap">
+        <table id="accountsTable">
+          <thead><tr><th>Code</th><th>Name</th><th>Type</th></tr></thead>
+          <tbody><tr><td colspan="3" class="empty">No accounts posted yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PROCUREMENT ============ -->
+  <section id="section-purchases" class="panel-section">
+    <div class="grid two">
+      <div class="card">
+        <h2>New purchase order</h2>
+        <p class="hint">E.g. replacement chemical CO2 filter cartridges, or a scrubber servicing visit.</p>
+        <form id="formPurchaseOrder" class="form">
+          <label>Vendor
+            <select name="vendorId" id="poVendorSelect" required></select>
+          </label>
+          <label>Product / service
+            <select name="productId" id="poProductSelect" required></select>
+          </label>
+          <div class="form-row">
+            <label>Quantity<input type="number" name="quantity" min="1" value="1" required></label>
+            <label>Unit price (₹)<input type="number" name="unitPrice" min="0" step="0.01" required></label>
+          </div>
+          <button type="submit" class="btn primary">Create purchase order</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Vendor bills</h2>
+        <div class="table-wrap">
+          <table id="billsTable">
+            <thead><tr><th>Bill #</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+            <tbody><tr><td colspan="4" class="empty">No bills yet.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Purchase orders</h2>
+      <div class="table-wrap">
+        <table id="poTable">
+          <thead><tr><th>PO #</th><th>Vendor</th><th>Product</th><th>Qty</th><th>Unit price</th><th>Status</th><th></th></tr></thead>
+          <tbody><tr><td colspan="7" class="empty">No purchase orders yet.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BUDGETS ============ -->
+  <section id="section-budgets" class="panel-section">
+    <div class="grid two">
+      <div class="card">
+        <h2>Analytic account</h2>
+        <p class="hint">Ties a budget line to a habitat module / facility zone, e.g. "Habitat Dome Alpha".</p>
+        <form id="formAnalytic" class="form">
+          <label>Name<input type="text" name="name" required></label>
+          <label>Module
+            <select name="moduleId" id="analyticModuleSelect" required></select>
+          </label>
+          <button type="submit" class="btn">Create analytic account</button>
+        </form>
+        <div class="table-wrap">
+          <table id="analyticTable">
+            <thead><tr><th>ID</th><th>Name</th><th>Module</th></tr></thead>
+            <tbody><tr><td colspan="3" class="empty">None yet.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Budget line</h2>
+        <form id="formBudget" class="form">
+          <label>Analytic account
+            <select name="analyticAccountId" id="budgetAnalyticSelect" required></select>
+          </label>
+          <label>Planned amount (₹)<input type="number" name="plannedAmount" min="0" step="0.01" required></label>
+          <div class="form-row">
+            <label>Period start<input type="date" name="periodStart" required></label>
+            <label>Period end<input type="date" name="periodEnd" required></label>
+          </div>
+          <button type="submit" class="btn">Add budget line</button>
+        </form>
+        <div class="table-wrap">
+          <table id="budgetsTable">
+            <thead><tr><th>ID</th><th>Planned</th><th>Period</th></tr></thead>
+            <tbody><tr><td colspan="3" class="empty">None yet.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ REPORTS ============ -->
+  <section id="section-reports" class="panel-section">
+    <div class="grid two">
+      <div class="card">
+        <div class="card-head"><h2>Profit &amp; loss</h2><button class="btn ghost" data-report="pl">Run</button></div>
+        <div id="reportPL" class="report-box"><p class="empty">Not run yet.</p></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Balance sheet</h2><button class="btn ghost" data-report="bs">Run</button></div>
+        <div id="reportBS" class="report-box"><p class="empty">Not run yet.</p></div>
+      </div>
+    </div>
+    <div class="grid two">
+      <div class="card">
+        <div class="card-head"><h2>Revenue by module</h2><button class="btn ghost" data-report="revenue">Run</button></div>
+        <div id="reportRevenue" class="report-box"><p class="empty">Not run yet.</p></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Budget variance</h2></div>
+        <div class="form-row">
+          <select id="budgetVarianceSelect"></select>
+          <button class="btn ghost" id="runBudgetVariance">Run</button>
+        </div>
+        <div id="reportBudget" class="report-box"><p class="empty">Not run yet.</p></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="js/app.js"></script>
+</body>
+</html>
